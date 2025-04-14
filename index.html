@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <title>Flörtöz Cesaret Oyunu 💋 (10 Tur - JSON Yüklemeli)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #fff0f5;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: #d81b60;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+        }
+
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 10px solid #e91e63;
+            transform-origin: center center;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%) rotate(180deg);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 30px solid #d81b60;
+            z-index: 10;
+        }
+
+        button {
+            background-color: #d81b60;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+
+        button:hover {
+            background-color: #880e4f;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #gameArea,
+        #playerNamesForm {
+            display: none;
+        }
+
+        .inputField {
+            font-size: 18px;
+            padding: 10px;
+            margin: 10px;
+            width: 80%;
+            max-width: 300px;
+            border: 2px solid #d81b60;
+            border-radius: 8px;
+        }
+
+        .nameForm {
+            margin-top: 20px;
+        }
+
+        #scorePanel {
+            margin-top: 20px;
+            font-size: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        #remainingSpins {
+            font-size: 18px;
+            margin-top: 15px;
+        }
+
+        #playerTurn {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 15px;
+            display: none;
+            color: #880e4f;
+        }
+
+        #challengeBox {
+            margin-top: 20px;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #e91e63;
+            background-color: #fce4ec;
+            border-radius: 8px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1.4;
+            display: none;
+        }
+
+        .endGameMessage {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d81b60;
+            display: none;
+            margin-top: 20px;
+        }
+
+        .messageBox {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 25px;
+            border: 3px solid #d81b60;
+            border-radius: 10px;
+            z-index: 9999;
+            width: 85%;
+            max-width: 450px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .messageBox p {
+             margin-bottom: 20px;
+             font-size: 18px;
+             color: #333;
+        }
+
+        .actionButtons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Flörtöz Cesaret Oyunu 💋 (10 Tur - JSON Yüklemeli)</h1>
+
+    <audio id="audio" src="cark_sesi.mp3" preload="auto"></audio>
+
+    <div class="wheel-container">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="300" height="300"></canvas>
+    </div>
+
+    <button id="startButton" onclick="firstStart()">Oyuna Başla</button>
+
+    <div id="playerNamesForm">
+        <h2>Oyuncuların isimlerini girin</h2>
+        <div class="nameForm">
+            <input id="player1Name" class="inputField" type="text" placeholder="1. Oyuncu Adı" value="Ayla" />
+        </div>
+        <div class="nameForm">
+            <input id="player2Name" class="inputField" type="text" placeholder="2. Oyuncu Adı" value="Barış" />
+        </div>
+        <button onclick="startRound()">İsimleri Onayla & Başla</button>
+    </div>
+
+    <div id="gameArea">
+        <div id="scorePanel">
+            <div id="score1"></div>
+            <div id="score2"></div>
+        </div>
+        <div id="playerTurn"></div>
+        <div id="challengeBox">Görevi görmek için çarkı çevir!</div>
+        <button id="spinBtn" onclick="spinWheel()">🎡 ÇARKI ÇEVİR</button>
+        <div id="remainingSpins">Toplam Kalan Çevirme Hakkı: 10</div>
+        <div id="endGameMessage" class="endGameMessage"></div>
+    </div>
+
+    <div id="messageBox" class="messageBox">
+        <p id="messageText"></p>
+        <div class="actionButtons">
+            </div>
+    </div>
+
+    <div id="introBox" class="messageBox" style="display: block;">
+        <p><strong>Flörtöz Cesaret Oyunu'na hoş geldiniz! 💋</strong><br><br>
+            Bu oyunda sırayla çarkı çevirip romantik ve cesur görevleri yerine getirin.
+            Görevi tamamlarsanız puan kazanırsınız. Oyun toplam <strong>10 tur</strong> sürecek ve sonunda en çok puan toplayan kazanır!<br><br>
+            Hazırsanız başlayalım 🎉
+        </p>
+        <div class="actionButtons">
+            <button onclick="closeIntro()">Anladım, başla!</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Oyun Ayarları ---
+        const TOTAL_TURNS = 10;
+        const SEGMENTS = 12;
+        const SPIN_DURATION_MS = 15000; // 15 saniye
+        const MIN_SPEED_DEG_S = 100;
+        const MAX_SPEED_DEG_S = 240;
+        // --- Oyun Ayarları Sonu ---
+
+        let playerScores = [0, 0];
+        let currentPlayer = 0;
+        let totalSpinsAllowed = TOTAL_TURNS;
+        let spinsTaken = 0;
+        let currentAngle = 0;
+        let ilkDonus = 0;
+        let player1Name = "Oyuncu 1";
+        let player2Name = "Oyuncu 2";
+        let isSpinning = false;
+        let animationFrameId = null;
+
+        // *** DEĞİŞİKLİK: Görevler artık buradan değil, JSON'dan yüklenecek ***
+        let challenges = []; // Başlangıçta boş dizi
+        // *** DEĞİŞİKLİK SONU ***
+
+        const wheel = document.getElementById('wheel');
+        const ctx = wheel.getContext('2d');
+        const radius = wheel.width / 2;
+        const audio = document.getElementById('audio');
+
+        const playerTurnDiv = document.getElementById("playerTurn");
+        const challengeBoxDiv = document.getElementById("challengeBox");
+        const messageTextParagraph = document.getElementById("messageText");
+        const messageBoxDiv = document.getElementById("messageBox");
+        const actionButtonsDiv = messageBoxDiv.querySelector(".actionButtons");
+        const spinBtn = document.getElementById("spinBtn");
+        const remainingSpinsDiv = document.getElementById("remainingSpins");
+        const endGameMessageDiv = document.getElementById("endGameMessage");
+
+        // *** YENİ FONKSİYON: Görevleri JSON'dan yükle ***
+        async function loadChallenges() {
+          try {
+            const response = await fetch('gorevler.json'); // JSON dosyasının adı
+            if (!response.ok) {
+              throw new Error(`HTTP hatası! Durum: ${response.status}`);
+            }
+            const data = await response.json();
+            challenges = data; // Global 'challenges' dizisini güncelle
+            console.log("Görevler başarıyla yüklendi:", challenges.length, "adet");
+            // Görev sayısı segment sayısından azsa uyarı verilebilir (isteğe bağlı)
+            if (challenges.length < SEGMENTS) {
+                console.warn("Uyarı: Yüklenen görev sayısı (" + challenges.length + ") çark segment sayısından (" + SEGMENTS + ") az.");
+            }
+          } catch (error) {
+            console.error('Görevler yüklenirken hata oluştu:', error);
+            alert('Görevler yüklenemedi! Lütfen gorevler.json dosyasının oyunla aynı klasörde ve doğru formatta olduğundan emin olun.');
+            challenges = []; // Hata durumunda boşalt
+          }
+        }
+        // *** YENİ FONKSİYON SONU ***
+
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function easeOutQuint(t) {
+          return 1 - Math.pow(1 - t, 5);
+        }
+
+        function closeIntro() {
+            document.getElementById("introBox").style.display = "none";
+            document.getElementById("startButton").style.display = "inline-block";
+        }
+
+        function firstStart() {
+            document.getElementById("startButton").style.display = "none";
+            document.getElementById("playerNamesForm").style.display = "block";
+        }
+
+        // *** DEĞİŞİKLİK: startRound artık async ***
+        async function startRound() {
+            messageBoxDiv.style.display = "none";
+            endGameMessageDiv.style.display = "none";
+
+            // *** DEĞİŞİKLİK: Oyuna başlamadan görevleri yükle ***
+            try {
+                await loadChallenges(); // Görevleri yükle ve bekle
+                if (challenges.length === 0) {
+                    console.error("Görev listesi boş veya yüklenemedi, oyun başlatılamıyor.");
+                    alert("Görev listesi yüklenemediği için oyun başlatılamıyor. Lütfen sayfayı yenileyin veya dosyaları kontrol edin.");
+                    // Formu tekrar göstermek yerine oyunu tamamen durdurmak daha iyi olabilir.
+                    // document.getElementById("playerNamesForm").style.display = "block";
+                    // document.getElementById("gameArea").style.display = "none";
+                    return; // Fonksiyondan çık
+                }
+            } catch (error) {
+                 console.error("startRound içinde görev yükleme hatası:", error);
+                 return; // Hata varsa devam etme
+            }
+            // *** DEĞİŞİKLİK SONU ***
+
+            const p1Input = document.getElementById("player1Name").value;
+            const p2Input = document.getElementById("player2Name").value;
+            player1Name = p1Input ? p1Input.trim() : "Oyuncu 1";
+            player2Name = p2Input ? p2Input.trim() : "Oyuncu 2";
+
+            if (!player1Name || !player2Name) {
+                alert("Lütfen her iki oyuncunun adını girin!");
+                 document.getElementById("playerNamesForm").style.display = "block";
+                 document.getElementById("gameArea").style.display = "none";
+                return;
+            }
+
+            document.getElementById("playerNamesForm").style.display = "none";
+            document.getElementById("gameArea").style.display = "block";
+            challengeBoxDiv.style.display = "flex";
+            remainingSpinsDiv.style.display = "block";
+
+            playerScores = [0, 0];
+            currentPlayer = 0;
+            spinsTaken = 0;
+            totalSpinsAllowed = TOTAL_TURNS;
+            currentAngle = 0;
+            ilkDonus = 0;
+            isSpinning = false;
+            if (animationFrameId) {
+                 cancelAnimationFrame(animationFrameId);
+                 animationFrameId = null;
+            }
+            wheel.style.transform = `rotate(0deg)`;
+
+            updateScore();
+            updateRemainingSpinsDisplay();
+            updatePlayerTurnDisplay();
+            drawWheel();
+
+            challengeBoxDiv.innerText = "Görevi görmek için çarkı çevir!";
+            spinBtn.disabled = false;
+            spinBtn.style.display = "inline-block";
+        }
+        // *** DEĞİŞİKLİK SONU ***
+
+        function updateScore() {
+            document.getElementById("score1").innerText = `${player1Name}: ${playerScores[0]}`;
+            document.getElementById("score2").innerText = `${player2Name}: ${playerScores[1]}`;
+        }
+
+         function updateRemainingSpinsDisplay() {
+             const spinsLeft = totalSpinsAllowed - spinsTaken;
+             remainingSpinsDiv.innerText = `Toplam Kalan Çevirme Hakkı: ${Math.max(0, spinsLeft)}`;
+         }
+
+        function updatePlayerTurnDisplay() {
+            const currentPlayerName = currentPlayer === 0 ? player1Name : player2Name;
+            playerTurnDiv.innerText = `Sıra ${currentPlayerName}'da`;
+            playerTurnDiv.style.display = "block";
+        }
+
+
+        function drawWheel() {
+            ctx.clearRect(0, 0, wheel.width, wheel.height);
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            for (let i = 0; i < SEGMENTS; i++) {
+                const angle = (2 * Math.PI) / SEGMENTS;
+                const startAngle = i * angle;
+                const endAngle = (i + 1) * angle;
+
+                ctx.beginPath();
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius - 5, startAngle, endAngle);
+                ctx.closePath();
+
+                ctx.fillStyle = getRandomColor();
+                ctx.fill();
+                ctx.strokeStyle = '#FFF';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function showChallenge(finalAngle) {
+             // Görev listesi boşsa veya yüklenememişse hata ver
+             if (!challenges || challenges.length === 0) {
+                 console.error("Görev listesi bulunamadı veya boş!");
+                 challengeBoxDiv.innerText = "HATA: GÖREVLER YÜKLENEMEDİ!";
+                 messageBoxDiv.style.display = "none"; // Mesaj kutusunu gizle
+                 return;
+             }
+
+             const degreesPerSegment = 360 / SEGMENTS;
+             const normalizedAngle = finalAngle % 360;
+             const landingAngle = (360 - normalizedAngle + 270) % 360;
+             const challengeIndex = Math.floor(landingAngle / degreesPerSegment);
+
+             // Modulo işlemi ile index'in dizi sınırları içinde kalmasını sağla
+             const challenge = challenges[challengeIndex % challenges.length];
+             const currentPlayerName = currentPlayer === 0 ? player1Name : player2Name;
+
+             messageTextParagraph.innerText = `${currentPlayerName}, görevin:\n\n"${challenge}"\n\nGörevi tamamladın mı?`;
+             actionButtonsDiv.innerHTML = `
+                 <button onclick="completeTask(true)">Evet, Tamamladım 👍</button>
+                 <button onclick="completeTask(false)">Hayır, Yapamadım 👎</button>
+             `;
+             messageBoxDiv.style.display = "block";
+             challengeBoxDiv.innerText = `Cevap bekleniyor...`;
+        }
+
+        // --- Animasyon Değişkenleri ---
+        let spinStartTime, startRotation, targetRotation;
+
+        function animateSpin(timestamp) {
+            if (!spinStartTime) spinStartTime = timestamp;
+
+            const elapsedTime = timestamp - spinStartTime;
+            const progress = Math.min(elapsedTime / SPIN_DURATION_MS, 1);
+            const easedProgress = easeOutQuint(progress);
+
+            const currentRotation = startRotation + (targetRotation - startRotation) * easedProgress;
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+            if (progress < 1) {
+                animationFrameId = requestAnimationFrame(animateSpin);
+            } else {
+                ilkDonus = targetRotation;
+                isSpinning = false;
+
+                if (!audio.paused) {
+                     audio.pause();
+                     audio.currentTime = 0;
+                }
+
+                spinsTaken++;
+                updateRemainingSpinsDisplay();
+                showChallenge(ilkDonus);
+
+                animationFrameId = null;
+            }
+        }
+        // --- Animasyon Fonksiyonu Sonu ---
+
+
+        function spinWheel() {
+            if (isSpinning) return;
+            if (spinsTaken >= totalSpinsAllowed) {
+                 alert("Tüm çevirme hakları kullanıldı!");
+                 return;
+            }
+             // Görevlerin yüklenip yüklenmediğini tekrar kontrol et (ekstra güvenlik)
+             if (!challenges || challenges.length === 0) {
+                alert("Görevler henüz yüklenmedi veya yüklenirken bir hata oluştu. Lütfen bekleyin veya sayfayı yenileyin.");
+                return;
+             }
+
+            drawWheel();
+
+            isSpinning = true;
+            spinBtn.disabled = true;
+            playerTurnDiv.innerText = "Çark Dönüyor...";
+            challengeBoxDiv.innerText = "...";
+
+            spinStartTime = null;
+            const spinDuration = SPIN_DURATION_MS; // Sabit süre
+            const randomSpeed = MIN_SPEED_DEG_S + Math.random() * (MAX_SPEED_DEG_S - MIN_SPEED_DEG_S);
+            const extraRotation = (randomSpeed * spinDuration) / 1000;
+            startRotation = ilkDonus;
+            targetRotation = ilkDonus + extraRotation;
+
+             if (audio.readyState >= 3) {
+                  audio.currentTime = 0;
+                  audio.play().catch(e => console.error("Ses çalma hatası:", e));
+             } else {
+                 console.warn("Ses dosyası henüz çalmaya hazır değil.");
+             }
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(animateSpin);
+        }
+
+        function completeTask(completed) {
+             messageBoxDiv.style.display = "none";
+
+            if (completed) {
+                playerScores[currentPlayer]++;
+                updateScore();
+                challengeBoxDiv.innerText = `Puan kazanıldı!`;
+            } else {
+                challengeBoxDiv.innerText = `Bu tur puan yok.`;
+            }
+
+             if (spinsTaken >= totalSpinsAllowed) {
+                 setTimeout(endGame, 500);
+             } else {
+                 currentPlayer = (currentPlayer + 1) % 2;
+                 updatePlayerTurnDisplay();
+                 challengeBoxDiv.innerText = "Görevi görmek için çarkı çevir!";
+                 spinBtn.disabled = false;
+            }
+        }
+
+        function endGame() {
+            console.log("Oyun Bitti Fonksiyonu Çalıştı!");
+             console.log(`${player1Name} Skoru:`, playerScores[0]);
+             console.log(`${player2Name} Skoru:`, playerScores[1]);
+
+             if (animationFrameId) {
+                  cancelAnimationFrame(animationFrameId);
+                  animationFrameId = null;
+             }
+             if (!audio.paused) {
+                  audio.pause();
+                  audio.currentTime = 0;
+             }
+
+            spinBtn.style.display = "none";
+            playerTurnDiv.style.display = "none";
+            challengeBoxDiv.style.display = "none";
+            remainingSpinsDiv.style.display = "none";
+
+            let winnerMessage = "";
+            if (playerScores[0] > playerScores[1]) {
+                winnerMessage = `${player1Name} kazandı! 🎉`;
+                messageTextParagraph.innerText = winnerMessage;
+                 showEndGameButtons();
+            } else if (playerScores[1] > playerScores[0]) {
+                winnerMessage = `${player2Name} kazandı! 🎉`;
+                 messageTextParagraph.innerText = winnerMessage;
+                 showEndGameButtons();
+            } else {
+                winnerMessage = `Oyun berabere bitti! ${playerScores[0]} - ${playerScores[1]}`;
+                messageTextParagraph.innerText = winnerMessage + "\n\nNe yapmak istersiniz?";
+                 showTieBreakerOptions();
+            }
+             messageBoxDiv.style.display = "block";
+        }
+
+         function showTieBreakerOptions() {
+            actionButtonsDiv.innerHTML = '';
+
+            const randomWinnerButton = document.createElement("button");
+            randomWinnerButton.innerText = "Rastgele Kazanan Seç";
+            randomWinnerButton.onclick = selectRandomWinner;
+
+            const restartButton = document.createElement("button");
+            restartButton.innerText = "Yeniden Başla";
+            restartButton.onclick = startRound;
+
+            actionButtonsDiv.appendChild(randomWinnerButton);
+            actionButtonsDiv.appendChild(restartButton);
+        }
+
+
+        function showEndGameButtons() {
+            actionButtonsDiv.innerHTML = '';
+
+            const newGameButton = document.createElement("button");
+            newGameButton.innerText = "Yeni Oyuna Başla";
+            newGameButton.onclick = startRound;
+
+            actionButtonsDiv.appendChild(newGameButton);
+        }
+
+        function selectRandomWinner() {
+            const winner = Math.random() < 0.5 ? player1Name : player2Name;
+            messageTextParagraph.innerText = `Beraberlik bozuldu! Rastgele seçilen kazanan: ${winner} 🎉`;
+             showEndGameButtons();
+        }
+
+        // Sayfa ilk yüklendiğinde çarkı çizmek için çağırabiliriz,
+        // ancak görevler henüz yüklenmemiş olacağı için oyun başlamadan önce
+        // startRound içinde tekrar çizilmesi daha doğru.
+        // drawWheel();
+
+        
+        if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() { // Sayfa tamamen yüklendiğinde çalıştır
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(function(registration) {
+        console.log('Service Worker registered with scope:', registration.scope);
+      })
+      .catch(function(error) {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
+}
+    </script>
+</body>
+</html>
